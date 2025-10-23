@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -63,8 +63,26 @@ export function OrderForm({
       employeeName: "",
       tea: "",
       snack: "",
+      amount: 0,
     },
   });
+
+  const { watch, setValue } = form;
+  const selectedTeaName = watch("tea");
+  const selectedSnackName = watch("snack");
+
+  useEffect(() => {
+    const selectedTea = teaItems.find((item) => item.name === selectedTeaName);
+    const selectedSnack = snackItems.find((item) => item.name === selectedSnackName);
+
+    const teaPrice = selectedTea?.price || 0;
+    const snackPrice = selectedSnack?.price || 0;
+
+    const totalAmount = teaPrice + snackPrice;
+    setValue("amount", totalAmount, { shouldValidate: true });
+
+  }, [selectedTeaName, selectedSnackName, teaItems, snackItems, setValue]);
+
 
   function onSubmit(data: z.infer<typeof orderSchema>) {
     setFormStatus(null);
@@ -176,7 +194,7 @@ export function OrderForm({
                   <FormItem>
                     <FormLabel>Amount (Max ₹25)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="Enter amount" {...field} />
+                      <Input type="number" placeholder="Total amount" {...field} readOnly className="bg-muted"/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
