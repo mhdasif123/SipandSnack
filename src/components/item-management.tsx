@@ -23,6 +23,17 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
   Form,
   FormControl,
   FormField,
@@ -32,7 +43,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
-import { Item } from "@/lib/data";
+import { Item, getTeaItems, getSnackItems } from "@/lib/data";
 import { itemSchema } from "@/lib/schemas";
 import { addItemAction, updateItemAction, deleteItemAction } from "@/lib/actions";
 
@@ -66,7 +77,8 @@ export function ItemManagement({ initialItems, itemType, itemTypePlural }: ItemM
         setItems(items.map(i => i.id === editingItem.id ? { ...i, ...data } : i));
       } else {
         await addItemAction(itemType, data);
-        setItems([...items, { id: Date.now().toString(), ...data }]);
+        const updatedItems = itemType === 'tea' ? await getTeaItems() : await getSnackItems();
+        setItems(updatedItems);
       }
       setDialogOpen(false);
     });
@@ -105,9 +117,30 @@ export function ItemManagement({ initialItems, itemType, itemTypePlural }: ItemM
                     <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} disabled={isPending}>
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the item.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(item.id)}
+                            disabled={isPending}
+                          >
+                            {isPending ? 'Deleting...' : 'Delete'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}
@@ -143,7 +176,7 @@ export function ItemManagement({ initialItems, itemType, itemTypePlural }: ItemM
                   <FormItem>
                     <FormLabel>Price</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.5" {...field} />
+                      <Input type="number" step="0.5" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
