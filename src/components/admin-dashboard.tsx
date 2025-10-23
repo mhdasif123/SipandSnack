@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
+import { DateRange } from 'react-day-picker';
 import {
   Table,
   TableBody,
@@ -11,17 +12,21 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DollarSign, ShoppingBag, Users } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, Download } from 'lucide-react';
 import { Order } from '@/lib/data';
 import { format, isWithinInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { Button } from './ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import Papa from 'papaparse';
 
 type DashboardProps = {
   initialOrders: Order[];
 };
 
-type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'all';
+type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'all' | 'custom';
 
-const filterOrdersByTimeframe = (orders: Order[], timeframe: TimeFrame) => {
+const filterOrdersByTimeframe = (orders: Order[], timeframe: TimeFrame, dateRange?: DateRange) => {
   const now = new Date();
   let interval: Interval | null = null;
 
@@ -35,6 +40,16 @@ const filterOrdersByTimeframe = (orders: Order[], timeframe: TimeFrame) => {
     case 'monthly':
       interval = { start: startOfMonth(now), end: endOfMonth(now) };
       break;
+    case 'custom':
+      if (dateRange?.from) {
+        interval = {
+            start: startOfDay(dateRange.from),
+            end: dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from),
+        }
+      } else {
+        return [];
+      }
+      break;
     case 'all':
     default:
       return orders;
@@ -43,10 +58,50 @@ const filterOrdersByTimeframe = (orders: Order[], timeframe: TimeFrame) => {
   return orders.filter(order => isWithinInterval(parseISO(order.orderDate), interval!));
 };
 
+const exportToCsv = (data: Order[], timeframe: TimeFrame, dateRange?: DateRange) => {
+    const csvData = data.map(order => ({
+        'Employee': order.employeeName,
+        'Tea': order.tea,
+        'Snack': order.snack,
+        'Amount': order.amount.toFixed(2),
+        'Date': format(parseISO(order.orderDate), 'yyyy-MM-dd HH:mm:ss'),
+    }));
+
+    const csv = Papa.unparse(csvData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    let filename = `sip-and-snack-orders-${timeframe}`;
+    if (timeframe === 'custom' && dateRange?.from) {
+        filename += `-${format(dateRange.from, 'yyyy-MM-dd')}`;
+        if (dateRange.to) {
+            filename += `_to_${format(dateRange.to, 'yyyy-MM-dd')}`;
+        }
+    }
+    filename += '.csv';
+    
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 export function AdminDashboard({ initialOrders }: DashboardProps) {
   const [timeframe, setTimeframe] = useState<TimeFrame>('daily');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
-  const filteredOrders = useMemo(() => filterOrdersByTimeframe(initialOrders, timeframe), [initialOrders, timeframe]);
+  const handleTimeframeChange = (value: string) => {
+    const newTimeframe = value as TimeFrame;
+    if (newTimeframe !== 'custom') {
+        setDateRange(undefined);
+    }
+    setTimeframe(newTimeframe);
+  }
+
+  const filteredOrders = useMemo(() => {
+    if (timeframe === 'custom' && !dateRange?.from) return [];
+    return filterOrdersByTimeframe(initialOrders, timeframe, dateRange)
+  }, [initialOrders, timeframe, dateRange]);
 
   const stats = useMemo(() => {
     const totalAmount = filteredOrders.reduce((sum, order) => sum + order.amount, 0);
@@ -57,14 +112,62 @@ export function AdminDashboard({ initialOrders }: DashboardProps) {
 
   return (
     <div className="space-y-8">
-      <Tabs value={timeframe} onValueChange={(value) => setTimeframe(value as TimeFrame)}>
-        <TabsList>
-          <TabsTrigger value="daily">Daily</TabsTrigger>
-          <TabsTrigger value="weekly">Weekly</TabsTrigger>
-          <TabsTrigger value="monthly">Monthly</TabsTrigger>
-          <TabsTrigger value="all">All Time</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <Tabs value={timeframe} onValueChange={handleTimeframeChange}>
+            <TabsList>
+            <TabsTrigger value="daily">Daily</TabsTrigger>
+            <TabsTrigger value="weekly">Weekly</TabsTrigger>
+            <TabsTrigger value="monthly">Monthly</TabsTrigger>
+            <TabsTrigger value="all">All Time</TabsTrigger>
+            </TabsList>
+        </Tabs>
+
+        <div className="flex items-center gap-2">
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant={"outline"}
+                        className="w-[280px] justify-start text-left font-normal"
+                    >
+                        {dateRange?.from ? (
+                            dateRange.to ? (
+                            <>
+                                {format(dateRange.from, "LLL dd, y")} -{" "}
+                                {format(dateRange.to, "LLL dd, y")}
+                            </>
+                            ) : (
+                                format(dateRange.from, "LLL dd, y")
+                            )
+                        ) : (
+                            <span>Pick a date range</span>
+                        )}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={(range) => {
+                        setDateRange(range);
+                        if (range?.from) {
+                            setTimeframe('custom');
+                        }
+                    }}
+                    numberOfMonths={2}
+                />
+                </PopoverContent>
+            </Popover>
+            <Button 
+                onClick={() => exportToCsv(filteredOrders, timeframe, dateRange)}
+                disabled={filteredOrders.length === 0}
+            >
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+            </Button>
+        </div>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
