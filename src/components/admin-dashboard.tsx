@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { IndianRupee, ShoppingBag, Users } from 'lucide-react';
+import { ShoppingBag, Users } from 'lucide-react';
 import { Order } from '@/lib/data';
 import { format, isWithinInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, parseISO } from 'date-fns';
 import { ReportGenerator } from './report-generator';
@@ -60,22 +60,20 @@ export function AdminDashboard({ initialOrders }: DashboardProps) {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <Tabs value={timeframe} onValueChange={(value) => setTimeframe(value as TimeFrame)}>
-            <TabsList>
-            <TabsTrigger value="daily">Daily</TabsTrigger>
-            <TabsTrigger value="weekly">Weekly</TabsTrigger>
-            <TabsTrigger value="monthly">Monthly</TabsTrigger>
-            <TabsTrigger value="all">All Time</TabsTrigger>
-            </TabsList>
-        </Tabs>
-      </div>
+      <Tabs value={timeframe} onValueChange={(value) => setTimeframe(value as TimeFrame)}>
+          <TabsList>
+          <TabsTrigger value="daily">Daily</TabsTrigger>
+          <TabsTrigger value="weekly">Weekly</TabsTrigger>
+          <TabsTrigger value="monthly">Monthly</TabsTrigger>
+          <TabsTrigger value="all">All Time</TabsTrigger>
+          </TabsList>
+      </Tabs>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
-            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+            <span className="h-4 w-4 text-muted-foreground">₹</span>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{stats.totalAmount.toFixed(2)}</div>
