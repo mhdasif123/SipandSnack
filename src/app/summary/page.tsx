@@ -1,11 +1,13 @@
 import { AppHeader } from "@/components/app-header";
 import { CurrentTime } from "@/components/current-time";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { teaItems, snackItems } from "@/lib/data";
+import { getTeaItems, getSnackItems } from "@/lib/data";
 import { Coffee, Cookie } from "lucide-react";
 
-export default function SummaryPage() {
+export default async function SummaryPage() {
+  const teaItems = await getTeaItems();
+  const snackItems = await getSnackItems();
+
   return (
     <div className="flex flex-col min-h-screen">
       <AppHeader />
