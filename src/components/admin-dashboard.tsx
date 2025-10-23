@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { DateRange } from 'react-day-picker';
 import {
   Table,
   TableBody,
@@ -12,7 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DollarSign, ShoppingBag, Users } from 'lucide-react';
+import { IndianRupee, ShoppingBag, Users } from 'lucide-react';
 import { Order } from '@/lib/data';
 import { format, isWithinInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, parseISO } from 'date-fns';
 import { ReportGenerator } from './report-generator';
@@ -76,7 +75,7 @@ export function AdminDashboard({ initialOrders }: DashboardProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{stats.totalAmount.toFixed(2)}</div>
