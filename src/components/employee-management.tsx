@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
-import { Employee } from "@/lib/data";
+import { Employee, getEmployees } from "@/lib/data";
 import { employeeSchema } from "@/lib/schemas";
 import { addEmployeeAction, updateEmployeeAction, deleteEmployeeAction } from "@/lib/actions";
 
@@ -65,8 +65,9 @@ export function EmployeeManagement({ initialEmployees }: EmployeeManagementProps
         setEmployees(employees.map(e => e.id === editingEmployee.id ? { ...e, ...data } : e));
       } else {
         await addEmployeeAction(data.name);
-        // This is a simplification. In a real app, you'd get the new employee back from the action.
-        setEmployees([...employees, { id: Date.now().toString(), ...data }]);
+        // Refetch employees to get the latest list with the new ID
+        const updatedEmployees = await getEmployees();
+        setEmployees(updatedEmployees);
       }
       setDialogOpen(false);
     });
