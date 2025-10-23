@@ -8,11 +8,13 @@ const ORDER_WINDOW_END_MINUTE = 30;
 
 export function useOrderWindow() {
   const [status, setStatus] = useState<{ isOpen: boolean; message: string }>({
-    isOpen: false,
-    message: "Initializing...",
+    isOpen: true,
+    message: "Ordering is open for testing.",
   });
 
   useEffect(() => {
+    // The check is disabled for testing. To re-enable, uncomment the code below.
+    /*
     const checkWindow = () => {
       const now = new Date();
       const currentHour = now.getHours();
@@ -31,6 +33,7 @@ export function useOrderWindow() {
     const timer = setInterval(checkWindow, 60000); // Check every minute
 
     return () => clearInterval(timer);
+    */
   }, []);
 
   return status;
